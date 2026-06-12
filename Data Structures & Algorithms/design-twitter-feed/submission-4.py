@@ -1,0 +1,46 @@
+class Twitter:
+
+    def __init__(self):
+        self.count = 0
+        self.following = {} # (userId, {followees})
+        self.tweets = {} # (userId, [(id, tweet)])
+
+    def postTweet(self, userId: int, tweetId: int) -> None:
+        # O(1)
+        self.count += 1
+        self.tweets.setdefault(userId, []).append((self.count, tweetId))
+
+    def getNewsFeed(self, userId: int) -> List[int]:
+        # O(n)
+        # add user to own following set
+        self.following.setdefault(userId, set()).add(userId)
+
+        # O(n) as heapify at end (bottom-up)
+        maxHeap = []
+        for followeeId in self.following[userId]:
+            if followeeId in self.tweets:
+                index = len(self.tweets[followeeId]) - 1
+                count, tweetId = self.tweets[followeeId][-1]
+                maxHeap.append((count, tweetId, followeeId, index-1))
+        heapq.heapify_max(maxHeap)
+        
+        # O(n) as max news feed is a constant 10
+        newsFeed = []
+        while maxHeap and len(newsFeed) < 10:
+            count, tweetId, followeeId, nextIndex = heapq.heappop_max(maxHeap)
+            newsFeed.append(tweetId)
+
+            if nextIndex >= 0:
+                count, tweetId = self.tweets[followeeId][nextIndex]
+                heapq.heappush_max(maxHeap, (count, tweetId, followeeId, nextIndex-1))
+
+        return newsFeed
+
+    def follow(self, followerId: int, followeeId: int) -> None:
+        # O(1)
+        self.following.setdefault(followerId, set()).add(followeeId)
+
+    def unfollow(self, followerId: int, followeeId: int) -> None:
+        # O(1)
+        if followerId in self.following and followeeId in self.following[followerId]:
+            self.following[followerId].remove(followeeId)
